@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>settings — angelexe</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<header class="top">
+  <div class="shell">
+    <a class="brand" href="index.html"><span class="dot"></span>angelexe</a>
+    <nav class="links">
+      <a href="index.html">hub</a>
+      <a href="create.html">create</a>
+      <a href="settings.html">settings</a>
+    </nav>
+  </div>
+</header>
+
+<div class="shell">
+  <div class="form-page">
+    <h1>Connect an AI model</h1>
+    <p class="lede">angelexe doesn't ship its own model — it talks to whatever OpenAI-compatible endpoint you point it at. This works with self-hosted open-source models or a hosted provider that uses the same API shape.</p>
+
+    <div class="settings-box">
+      <h3>Endpoint</h3>
+      <div class="field">
+        <label for="endpoint">Chat completions URL</label>
+        <input type="url" id="endpoint" placeholder="http://localhost:11434/v1/chat/completions" />
+        <div class="hint">Examples: Ollama's OpenAI-compatible route, text-generation-webui, LM Studio's local server, or a hosted API.</div>
+      </div>
+      <div class="field">
+        <label for="model">Model name</label>
+        <input type="text" id="model" placeholder="llama3" />
+      </div>
+      <div class="field">
+        <label for="apiKey">API key (only if your endpoint needs one)</label>
+        <input type="password" id="apiKey" placeholder="leave blank for local models" />
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-primary" id="save-btn">Save settings</button>
+        <span id="saved-msg" style="color:var(--gold); font-family:var(--font-mono); font-size:0.85rem; align-self:center; display:none;">saved ✓</span>
+      </div>
+    </div>
+
+    <div class="note">
+      <strong>Heads up on going public:</strong> settings are stored per-browser, in each visitor's own
+      localStorage — nothing here is shared between people. That means if you deploy this for other
+      people to use, <em>everyone configures (and pays for) their own AI connection</em>. There's no
+      shared server-side key, and no way to bill or rate-limit usage without adding a real backend.
+      For a personal setup this is perfectly fine. If you want a public product where you supply the
+      AI for everyone, you'll need a small server (even a free-tier one) to hold the API key and proxy
+      requests — happy to help you build that next.
+    </div>
+
+    <h3 style="font-family: var(--font-display); font-size: 1.05rem;">Popular open-source options</h3>
+    <ul style="color: var(--text-dim); line-height: 1.8;">
+      <li><strong>Ollama</strong> — easiest way to run models like Llama 3 or Mistral locally, exposes an OpenAI-compatible endpoint out of the box.</li>
+      <li><strong>text-generation-webui</strong> — more configurable local UI + API for open models.</li>
+      <li><strong>LM Studio</strong> — desktop app, one click to spin up a local OpenAI-compatible server.</li>
+      <li>Any hosted provider serving open-weight models over an OpenAI-style API also works — just fill in their URL, model name, and key.</li>
+    </ul>
+  </div>
+</div>
+
+<script src="js/ai.js"></script>
+<script>
+  const s = getSettings();
+  document.getElementById("endpoint").value = s.endpoint;
+  document.getElementById("model").value = s.model;
+  document.getElementById("apiKey").value = s.apiKey;
+
+  document.getElementById("save-btn").addEventListener("click", () => {
+    saveSettings({
+      endpoint: document.getElementById("endpoint").value.trim(),
+      model: document.getElementById("model").value.trim(),
+      apiKey: document.getElementById("apiKey").value.trim(),
+    });
+    const msg = document.getElementById("saved-msg");
+    msg.style.display = "inline";
+    setTimeout(() => (msg.style.display = "none"), 2000);
+  });
+</script>
+</body>
+</html>

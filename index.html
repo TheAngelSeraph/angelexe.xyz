@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>angelexe — run a character</title>
+<meta name="description" content="Create characters, worlds, and scenarios, then talk to them. Powered by open-source AI." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<header class="top">
+  <div class="shell">
+    <a class="brand" href="index.html"><span class="dot"></span>angelexe</a>
+    <nav class="links">
+      <a href="index.html">hub</a>
+      <a href="create.html">create</a>
+      <a href="settings.html">settings</a>
+    </nav>
+  </div>
+</header>
+
+<div class="shell">
+  <section class="hero">
+    <div class="prompt-line">&gt; angelexe --run<span class="caret"></span></div>
+    <h1 class="headline">Build a character.<br /><span class="accent">Run it anytime.</span></h1>
+    <p class="subhead">
+      angelexe is a small hub for characters, worlds, and scenarios you make yourself.
+      Write a personality, hit run, and talk to it — powered by whatever open-source
+      AI model you connect underneath.
+    </p>
+    <div class="hero-actions">
+      <a class="btn btn-primary" href="create.html">+ Create a character</a>
+      <a class="btn btn-secondary" href="settings.html">Connect an AI model</a>
+    </div>
+  </section>
+
+  <div class="section-head">
+    <h2>Your characters</h2>
+    <span class="count" id="char-count"></span>
+  </div>
+
+  <div class="grid" id="char-grid"></div>
+  <div class="empty" id="empty-state" style="display:none;">
+    <div class="headline-small">No characters yet</div>
+    <p>Create your first one — it takes about a minute.</p>
+    <a class="btn btn-primary" href="create.html">+ Create a character</a>
+  </div>
+
+  <footer class="foot">
+    angelexe · characters and chats live in your browser only · <a href="settings.html" style="text-decoration:underline;">AI backend settings</a>
+  </footer>
+</div>
+
+<script src="js/characters.js"></script>
+<script>
+  (async function () {
+    await seedIfEmpty();
+    render();
+  })();
+
+  function render() {
+    const list = loadCharacters();
+    const grid = document.getElementById("char-grid");
+    const empty = document.getElementById("empty-state");
+    const count = document.getElementById("char-count");
+
+    count.textContent = list.length ? `${list.length} running` : "";
+    grid.innerHTML = "";
+
+    if (list.length === 0) {
+      empty.style.display = "block";
+      return;
+    }
+    empty.style.display = "none";
+
+    for (const c of list) {
+      const card = document.createElement("div");
+      card.className = "card";
+      card.innerHTML = `
+        <div class="card-top">
+          <div class="avatar">${c.avatar || "🙂"}</div>
+          <div class="card-name">${escapeHtml(c.name)}</div>
+        </div>
+        <div class="card-tagline">${escapeHtml(c.tagline || "")}</div>
+        <div class="tags">${(c.tags || []).map((t) => `<span class="tag">${escapeHtml(t)}</span>`).join("")}</div>
+        <div class="card-foot">
+          <a class="run-btn" href="chat.html?id=${encodeURIComponent(c.id)}">RUN →</a>
+          <button class="card-menu" data-id="${c.id}" title="Delete character">delete</button>
+        </div>
+      `;
+      grid.appendChild(card);
+    }
+
+    grid.querySelectorAll(".card-menu").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        if (confirm("Delete this character? This can't be undone.")) {
+          deleteCharacter(btn.dataset.id);
+          render();
+        }
+      });
+    });
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement("div");
+    div.textContent = str;
+    return div.innerHTML;
+  }
+</script>
+</body>
+</html>

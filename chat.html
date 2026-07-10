@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>chat — angelexe</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<header class="top">
+  <div class="shell">
+    <a class="brand" href="index.html"><span class="dot"></span>angelexe</a>
+    <nav class="links">
+      <a href="index.html">hub</a>
+      <a href="create.html">create</a>
+      <a href="settings.html">settings</a>
+    </nav>
+  </div>
+</header>
+
+<div class="chat-page">
+  <div class="chat-header">
+    <div class="avatar" id="ch-avatar">🙂</div>
+    <div class="who">
+      <div class="name" id="ch-name">—</div>
+      <div class="status"><span class="dot"></span><span id="ch-status">ready</span></div>
+    </div>
+    <a class="btn-nav" id="ch-edit" href="#">edit</a>
+  </div>
+
+  <div class="chat-thread" id="thread"></div>
+
+  <div class="chat-input-bar">
+    <div class="chat-input-inner">
+      <textarea id="input" placeholder="Say something..." rows="1"></textarea>
+      <button class="btn btn-primary" id="send-btn">Send</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/characters.js"></script>
+<script src="js/ai.js"></script>
+<script>
+  const params = new URLSearchParams(location.search);
+  const charId = params.get("id");
+  const character = charId ? getCharacter(charId) : null;
+
+  if (!character) {
+    document.querySelector(".chat-page").innerHTML =
+      '<div class="shell" style="padding:48px 0;">No character found. <a href="index.html" style="text-decoration:underline;">Back to hub</a></div>';
+  } else {
+    init(character);
+  }
+
+  function historyKey(id) {
+    return "angelexe_history_" + id;
+  }
+
+  function loadHistory(id) {
+    const raw = localStorage.getItem(historyKey(id));
+    return raw ? JSON.parse(raw) : [];
+  }
+
+  function saveHistory(id, hist) {
+    localStorage.setItem(historyKey(id), JSON.stringify(hist));
+  }
+
+  function init(c) {
+    document.getElementById("ch-avatar").textContent = c.avatar || "🙂";
+    document.getElementById("ch-name").textContent = c.name;
+    document.getElementById("ch-edit").href = "create.html?id=" + encodeURIComponent(c.id);
+
+    let history = loadHistory(c.id);
+    if (history.length === 0 && c.greeting) {
+      history.push({ role: "char", content: c.greeting });
+      saveHistory(c.id, history);
+    }
+    renderThread(history);
+
+    const input = document.getElementById("input");
+    const sendBtn = document.getElementById("send-btn");
+
+    input.addEventListener("input", () => {
+      input.style.height = "auto";
+      input.style.height = Math.min(input.scrollHeight, 160) + "px";
+    });
+
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        send();
+      }
+    });
+
+    sendBtn.addEventListener("click", send);
+
+    async function send() {
+      const text = input.value.trim();
+      if (!text) return;
+      input.value = "";
+      input.style.height = "auto";
+
+      history = loadHistory(c.id);
+      history.push({ role: "user", content: text });
+      saveHistory(c.id, history);
+      renderThread(history);
+
+      setStatus("thinking…");
+      try {
+        const reply = await requestReply(c, history);
+        history = loadHistory(c.id);
+        history.push({ role: "char", content: reply });
+        saveHistory(c.id, history);
+        renderThread(history);
+        setStatus("ready");
+      } catch (err) {
+        history = loadHistory(c.id);
+        history.push({
+          role: "system",
+          content: "Couldn't reach the AI backend — " + err.message + ". Check your settings.",
+        });
+        saveHistory(c.id, history);
+        renderThread(history);
+        setStatus("connection error");
+      }
+    }
+  }
+
+  function setStatus(text) {
+    document.getElementById("ch-status").textContent = text;
+  }
+
+  function renderThread(history) {
+    const thread = document.getElementById("thread");
+    thread.innerHTML = "";
+    for (const m of history) {
+      const div = document.createElement("div");
+      div.className = "msg " + m.role;
+      div.textContent = m.content;
+      thread.appendChild(div);
+    }
+    thread.scrollTop = thread.scrollHeight;
+  }
+</script>
+</body>
+</html>
